@@ -114,7 +114,7 @@ function drawPacman( ctx, p, frame ) {
   ctx.fill();
 }
 
-function drawGhost( ctx, g, color ) {
+function drawGhost( ctx, g ) {
   const { cx, cy } = cellCenter( g.x, g.y );
   const r = TILE / 2 - 1;
   const top = cy - r;
@@ -122,6 +122,7 @@ function drawGhost( ctx, g, color ) {
   const left = cx - r;
   const right = cx + r;
 
+  const color = g.scared ? SCARED_COLOR : ( GHOST_COLORS[ g.kind ] || '#ff0000' );
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc( cx, cy - 1, r, Math.PI, 0, false ); // cabeza
@@ -160,7 +161,13 @@ function drawHUD( ctx, game, W ) {
   ctx.fillText( 'VIDAS ' + game.lives, W * TILE - 8, 4 );
 }
 
-const GHOST_COLORS = [ '#ff0000', '#00ffff', '#ffb8ff', '#ffb852' ];
+const GHOST_COLORS = {
+  hunter: '#ff0000', // rojo
+  random: '#00ffff', // cian
+  ambusher: '#ffb8ff', // rosa
+  timid: '#ffb852', // naranja
+};
+const SCARED_COLOR = '#2121ff'; // azul (modo asustado)
 
 function draw( ctx, game, frame ) {
   const grid = game.grid;
@@ -175,7 +182,7 @@ function draw( ctx, game, frame ) {
   drawDots( ctx, grid );
   drawPowerPellets( ctx, grid, frame );
   drawPacman( ctx, game.pacman, frame );
-  game.ghosts.forEach( ( g, i ) => drawGhost( ctx, g, GHOST_COLORS[ i ] || '#ff0000' ) );
+  game.ghosts.forEach( ( g ) => drawGhost( ctx, g ) );
   drawHUD( ctx, game, W );
 }
 
