@@ -2,7 +2,7 @@
 
 Pac-Man clone in vanilla JS/HTML/CSS. Purpose: learning spec-driven development (see README, written in Spanish).
 
-## How it runs
+## How it runs!!!
 
 - No package.json, no build, no bundler, no tests, no lint. Do not add tooling unless asked.
 - Run by opening `src/index.html` directly in a browser (no dev server required).
