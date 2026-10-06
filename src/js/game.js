@@ -109,10 +109,13 @@ function movePacman( game ) {
       grid[ p.y ][ p.x ] = 0;
       game.score += 50;
       game.dotsRemaining--;
-      // Modo asustado: activar 5 s e invertir direccion de los 4 fantasmas.
+      // Modo asustado: activar 5 s y asustar + invertir direccion de los 4.
       game.frightened.active = true;
       game.frightened.timer = 300;
-      game.ghosts.forEach( ( g ) => ( g.dir = OPPOSITE[ g.dir ] ) );
+      game.ghosts.forEach( ( g ) => {
+        g.scared = true;
+        g.dir = OPPOSITE[ g.dir ];
+      } );
     }
     // Si no puede seguir, se detiene en la celda.
     if ( !canMove( grid, p.x, p.y, p.dir, 'pacman' ) ) return;
@@ -220,18 +223,30 @@ function update( game ) {
     game.frightened.timer--;
     if ( game.frightened.timer <= 0 ) {
       game.frightened.active = false;
-      game.ghosts.forEach( ( g ) => ( g.dir = OPPOSITE[ g.dir ] ) );
+      game.ghosts.forEach( ( g ) => {
+        g.scared = false;
+        g.dir = OPPOSITE[ g.dir ];
+      } );
     }
   }
 
   for ( const g of game.ghosts ) {
     if ( collides( game.pacman, g ) ) {
-      game.lives--;
-      if ( game.lives <= 0 ) {
-        game.state = 'lost';
-        return;
+      if ( g.scared ) {
+        // Comer fantasma asustado: +200 y reaparece en la pen sin modo asustado.
+        game.score += 200;
+        const start = GHOST_STARTS[ game.ghosts.indexOf( g ) ];
+        g.x = start.x;
+        g.y = start.y;
+        g.scared = false;
+      } else {
+        game.lives--;
+        if ( game.lives <= 0 ) {
+          game.state = 'lost';
+          return;
+        }
+        resetPositions( game );
       }
-      resetPositions( game );
       break;
     }
   }
