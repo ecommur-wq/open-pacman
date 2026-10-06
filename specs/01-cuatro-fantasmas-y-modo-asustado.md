@@ -1,6 +1,6 @@
 # SPEC 01 — Cuatro fantasmas con personalidad y modo asustado
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** —
 > **Date:** 2026-10-06
 > **Objective:** Añadir los 4 fantasmas con comportamientos de movimiento propios (uno persigue a Pacman siempre) y el modo asustado activado por power pellets.
@@ -67,6 +67,10 @@ Conventions:
 
 - [ ] El juego carga sin errores en la consola.
 - [ ] Hay 4 fantasmas y los 4 salen de la pen por la puerta.
+      **Nota (limitación aceptada):** con la IA greedy, `hunter` y `ambusher` pueden
+      quedar atrapados en la pen (la puerta es de 2 celdas y su puntaje los desvía a la
+      esquina sin salida). Se aceptó como limitación; un override de salida de la pen
+      queda para una spec futura.
 - [ ] `hunter` siempre reduce su distancia a Pacman en cada intersección.
 - [ ] `timid` siempre incrementa su distancia a Pacman en cada intersección.
 - [ ] `ambusher` toma decisiones apuntando a la celda 4 por delante de Pacman.
