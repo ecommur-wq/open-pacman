@@ -21,7 +21,7 @@ function createGame() {
   grid[ PACMAN_START.y ][ PACMAN_START.x ] = 0;
 
   let dots = 0;
-  for ( const row of grid ) for ( const v of row ) if ( v === 2 ) dots++;
+  for ( const row of grid ) for ( const v of row ) if ( v === 2 || v === 4 ) dots++;
 
   return {
     state: 'start',
@@ -42,7 +42,12 @@ function createGame() {
       dir: 'up',
       speed: GHOST_SPEED,
       kind: g.kind,
+      scared: false,
     } ) ),
+    frightened: {
+      active: false,
+      timer: 0, // frames restantes; 5 s = 300 frames a 60 fps
+    },
   };
 }
 
@@ -94,11 +99,20 @@ function movePacman( game ) {
       p.dir = p.nextDir;
       p.nextDir = null;
     }
-    // Comer dot.
-    if ( grid[ p.y ][ p.x ] === 2 ) {
+    // Comer dot o power pellet.
+    const v = grid[ p.y ][ p.x ];
+    if ( v === 2 ) {
       grid[ p.y ][ p.x ] = 0;
       game.score += 10;
       game.dotsRemaining--;
+    } else if ( v === 4 ) {
+      grid[ p.y ][ p.x ] = 0;
+      game.score += 50;
+      game.dotsRemaining--;
+      // Modo asustado: activar 5 s e invertir direccion de los 4 fantasmas.
+      game.frightened.active = true;
+      game.frightened.timer = 300;
+      game.ghosts.forEach( ( g ) => ( g.dir = OPPOSITE[ g.dir ] ) );
     }
     // Si no puede seguir, se detiene en la celda.
     if ( !canMove( grid, p.x, p.y, p.dir, 'pacman' ) ) return;
@@ -120,17 +134,39 @@ function decideGhost( game, g ) {
   // Sin salida (callejon): permitir el giro de 180.
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
 
-  if ( g.kind === 'hunter' ) {
-    const px = Math.round( p.x );
-    const py = Math.round( p.y );
+  const px = Math.round( p.x );
+  const py = Math.round( p.y );
+
+  const pickByScore = ( score ) => {
     let best = choices[ 0 ];
-    let bestDist = Infinity;
+    let bestScore = Infinity;
     for ( const dir of choices ) {
       const d = DIRS[ dir ];
-      const nx = g.x + d.x;
-      const ny = g.y + d.y;
-      const dist = Math.abs( nx - px ) + Math.abs( ny - py );
-      if ( dist < bestDist ) {
+      const s = score( g.x + d.x, g.y + d.y );
+      if ( s < bestScore ) {
+        bestScore = s;
+        best = dir;
+      }
+    }
+    return best;
+  };
+  const distTo = ( tx, ty ) => ( nx, ny ) =>
+    Math.abs( nx - tx ) + Math.abs( ny - ty );
+
+  if ( g.kind === 'hunter' ) {
+    g.dir = pickByScore( distTo( px, py ) );
+  } else if ( g.kind === 'ambusher' ) {
+    // Apunta a la celda 4 por delante de Pacman segun su direccion.
+    const pd = DIRS[ p.dir ] || { x: 1, y: 0 };
+    g.dir = pickByScore( distTo( px + pd.x * 4, py + pd.y * 4 ) );
+  } else if ( g.kind === 'timid' ) {
+    // Huye: elige la direccion que mas se aleja de Pacman.
+    let best = choices[ 0 ];
+    let bestDist = -1;
+    for ( const dir of choices ) {
+      const d = DIRS[ dir ];
+      const dist = Math.abs( g.x + d.x - px ) + Math.abs( g.y + d.y - py );
+      if ( dist > bestDist ) {
         bestDist = dist;
         best = dir;
       }
@@ -178,6 +214,15 @@ function collides( a, b ) {
 function update( game ) {
   movePacman( game );
   game.ghosts.forEach( ( g ) => moveGhost( game, g ) );
+
+  // Timer del modo asustado: al llegar a 0 se desactiva e invierten de nuevo.
+  if ( game.frightened.active ) {
+    game.frightened.timer--;
+    if ( game.frightened.timer <= 0 ) {
+      game.frightened.active = false;
+      game.ghosts.forEach( ( g ) => ( g.dir = OPPOSITE[ g.dir ] ) );
+    }
+  }
 
   for ( const g of game.ghosts ) {
     if ( collides( game.pacman, g ) ) {
